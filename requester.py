@@ -27,4 +27,5 @@ def getSpotifyTrackDetails(trackIds):
     infoDf = pd.DataFrame(filteredTrackInfo)
 
     result = pd.merge(infoDf, featuresDf, how='inner', on='id', sort=True, copy=True, indicator=False, validate=None)
+    result.rename({'id': '_id'}, axis=1, inplace=True)
     return result

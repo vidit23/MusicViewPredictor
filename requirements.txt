@@ -1,0 +1,8 @@
+dnspython
+pymongo
+flask
+spotipy
+requests
+pandas
+numpy
+scikit-learn

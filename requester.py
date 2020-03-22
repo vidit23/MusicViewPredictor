@@ -34,21 +34,15 @@ def getSpotifyTrackDetails(trackIds):
     return result
 
 def getSongList(trackIds):
-    spotifyTracksDf=getSpotifyTrackDetails(trackIds)
-    spotifyIdArtists = spotifyTracksDf[['artists','_id']]
-    spotifyArtists = spotifyTracksDf['artists'].values.tolist()
-    flat_list = []
-    for sublist in spotifyArtists:
-        for item in sublist:
-            flat_list.append(item)
-    spotifyArtists=pd.DataFrame(flat_list)
-    spotifyArtists.columns=['artist_id','artist_name']
-    spotifyMergedDf=pd.concat([spotifyTracksDf,spotifyArtists], axis=1)
-    song_list = []
-    for index,row in spotifyMergedDf.iterrows():
-        song = row['artist_name'] +" "+row['name']
-        song_list.append(song)
-    return song_list
+    spotifyTracksDf=getSpotifyTrackDetails(trackIds)## to be replaced by fetching information from mongodb
+    spotifyTracksdict = spotifyTracksDf.to_dict("records")
+    spotifySongs = []
+    for row in spotifyTracksdict:
+        song=row['name']
+        #append the song for each artist in this row
+        for artist in row['artists']:
+        spotifySongs.append(artist['name'] + song)
+    return spotifySongs
 
 def getYouTubeIds(trackIds):
     song_list = getSongList(trackIds)
@@ -57,9 +51,8 @@ def getYouTubeIds(trackIds):
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
     api_service_name = "youtube"
     api_version = "v3"
-    DEVELOPER_KEY = YOUTUBE_API_KEY
     youtube = googleapiclient.discovery.build(
-        api_service_name, api_version, developerKey = DEVELOPER_KEY)
+        api_service_name, api_version, developerKey = YOUTUBE_API_KEY)
     for query in song_list:
         request = youtube.search().list(
             part="snippet",

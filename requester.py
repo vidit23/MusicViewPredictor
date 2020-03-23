@@ -44,6 +44,7 @@ def getSongList(trackIds):
         spotifySongs.append(artist['name'] + song)
     return spotifySongs
 
+#returns videoIds, channelId, title description and other information related to the video
 def getYouTubeIds(trackIds):
     song_list = getSongList(trackIds)
     youtubeSongList=[]
@@ -63,3 +64,42 @@ def getYouTubeIds(trackIds):
     for songs in youtubeSongList:
         youtubeIdList.append(songs['items'][0])
     return youtubeIdList
+
+##returns only the video Ids of the youtube Video
+##get the vidoe detials from getYouTubeIds or from mongodb and store in youtubeSongList --> TODO --> this result
+def getVideoIds():
+    videoList = []
+    videoIdList=[]
+    for song in youtubeSongList:
+        my_dict = song['items']
+        videoList.append(next(iter(my_dict)))
+    for video in videoList:
+        videoIdList.append(video['id']['videoId'])
+    return videoIdList
+
+def getVideoStatistics():
+    videoData =[]
+    youTubeVideoList=[]
+    videoIdList=getVideoIds()
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+    api_service_name = "youtube"
+    api_version = "v3"
+    youtube = googleapiclient.discovery.build(
+        api_service_name, api_version, developerKey = YOUTUBE_API_KEY)
+    for ids in videoIdList:
+        request = youtube.videos().list(
+        part="snippet,contentDetails,statistics",
+        id=ids
+        )
+        response = request.execute()
+        youTubeVideoList.append(response)
+    for items in youTubeVideoList:
+        for data in items['items']:
+            details = {
+                'id':data['id'],
+                'statistics':data['statistics']
+            }
+            videoData.append(details)
+    return videoData
+
+    

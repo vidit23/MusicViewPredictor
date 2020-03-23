@@ -32,7 +32,6 @@ def getSpotifyTrackDetails(trackIds):
 
 def load_kaggle_data():
     data = pd.read_csv("./data/SpotifyFeatures.csv")
-    columns = data.columns
     cleaned_df = data.dropna()
     cleaned_df.rename(columns={'track_id':'_id'}, inplace=True)
     return cleaned_df

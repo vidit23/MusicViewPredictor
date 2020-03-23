@@ -29,3 +29,10 @@ def getSpotifyTrackDetails(trackIds):
     result = pd.merge(infoDf, featuresDf, how='inner', on='id', sort=True, copy=True, indicator=False, validate=None)
     result.rename({'id': '_id'}, axis=1, inplace=True)
     return result
+
+def load_kaggle_data():
+    data = pd.read_csv("./data/SpotifyFeatures.csv")
+    columns = data.columns
+    cleaned_df = data.dropna()
+    cleaned_df.rename(columns={'track_id':'_id'}, inplace=True)
+    return cleaned_df

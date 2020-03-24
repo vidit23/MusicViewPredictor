@@ -33,20 +33,36 @@ def getSpotifyTrackDetails(trackIds):
     result.rename({'id': '_id'}, axis=1, inplace=True)
     return result
 
-def getSongList(trackIds):
-    spotifyTracksDf=getSpotifyTrackDetails(trackIds)## to be replaced by fetching information from mongodb
-    spotifyTracksdict = spotifyTracksDf.to_dict("records")
+def getCursorOfSize(collectionName, batchSize):
+    count = 1
+    finalResult = []
+    tracks = []
+    for doc in connectedDB[collectionName].find(batch_size=batchSize):
+        if count % batchSize == 0:
+            finalResult.append(tracks)
+            tracks = []
+        count+=1
+        tracks.append(doc)
+    finalResult.append(tracks)
+    return finalResult
+
+def getSongList():
+    spotifyTracksDf = getCursorOfSize('Videos', 50)
     spotifySongs = []
-    for row in spotifyTracksdict:
-        song=row['name']
-        #append the song for each artist in this row
-        for artist in row['artists']:
-        spotifySongs.append(artist['name'] + song)
+    count = 1
+    for row in spotifyTracksDf:
+        for song in row:
+            s_name = song['name']
+            for artist in song['artists']:
+                a_name = artist['name']
+                s = s_name + ' '+ a_name
+                spotifySongs.append({'_id': song['_id'], 'name': s})
     return spotifySongs
 
 #returns videoIds, channelId, title description and other information related to the video
-def getYouTubeIds(trackIds):
-    song_list = getSongList(trackIds)
+def getYouTubeIds():
+    song_list = getSongList()
+    song_list = song_list[:5]
     youtubeSongList=[]
     youtubeIdList=[]
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
@@ -58,24 +74,12 @@ def getYouTubeIds(trackIds):
         request = youtube.search().list(
             part="snippet",
             maxResults=25,
-            q=query
+            q=query['name']
         )
-        youtubeSongList.append(response)
-    for songs in youtubeSongList:
-        youtubeIdList.append(songs['items'][0])
-    return youtubeIdList
+        response = request.execute()
+        youtubeSongList.append({'_id': query['_id'], 'youtubeId': response['items'][0]['id']['videoId']})
+    return youtubeSongList
 
-##returns only the video Ids of the youtube Video
-##get the vidoe detials from getYouTubeIds or from mongodb and store in youtubeSongList --> TODO --> this result
-def getVideoIds():
-    videoList = []
-    videoIdList=[]
-    for song in youtubeSongList:
-        my_dict = song['items']
-        videoList.append(next(iter(my_dict)))
-    for video in videoList:
-        videoIdList.append(video['id']['videoId'])
-    return videoIdList
 
 def getVideoStatistics():
     videoData =[]
@@ -88,18 +92,14 @@ def getVideoStatistics():
         api_service_name, api_version, developerKey = YOUTUBE_API_KEY)
     for ids in videoIdList:
         request = youtube.videos().list(
-        part="snippet,contentDetails,statistics",
-        id=ids
-        )
+        part="snippet,contentDetails,statistics", id=ids)
         response = request.execute()
         youTubeVideoList.append(response)
     for items in youTubeVideoList:
         for data in items['items']:
             details = {
                 'id':data['id'],
-                'statistics':data['statistics']
-            }
+                'statistics':data['statistics']}
             videoData.append(details)
     return videoData
-
     

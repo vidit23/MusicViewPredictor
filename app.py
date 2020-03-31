@@ -19,6 +19,13 @@ def getCorrespondingYoutubeIds():
         updateOneDocument('Videos', dicts['_id'], dicts)
     return str(correspondingIds)
 
+@app.route('/youtubeStats')
+def getYoutubeStats():
+    idsAndStats = getVideoStatistics()
+    for dicts in idsAndStats:
+        updateOneDocument('Videos', dicts['_id'], dicts)
+    return str(idsAndStats)
+
 
 if __name__ == "__main__":
     app.run()

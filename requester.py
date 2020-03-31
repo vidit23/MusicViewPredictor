@@ -3,6 +3,7 @@ import requests
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import googleapiclient.discovery
+from datetime import date
 
 
 from config import *
@@ -50,31 +51,48 @@ def getYoutubeSearchQueries():
             spotifySongs.append({'_id': song['_id'], 'name': query})
     return spotifySongs
 
+
 #returns videoIds, channelId, title description and other information related to the video
 def getYouTubeIds():
     song_list = getYoutubeSearchQueries()
-    song_list = song_list[:2]
+    song_list = song_list[:50]
     youtubeSongList=[]
     for query in song_list:
         request = youtubeClient.search().list(part="id", maxResults=1, type='video', q=query['name'])
-        response = request.execute()
-        youtubeSongList.append({'_id': query['_id'], 'youtubeId': response['items'][0]['id']['videoId']})
+        try:
+            response = request.execute()
+        except:
+            print('<<ERROR>> API LIMIT REACHED')
+            return youtubeSongList
+        if len(response['items']) != 0:
+            youtubeSongList.append({'_id': query['_id'], 'youtubeId': response['items'][0]['id']['videoId']})
+        else:
+            print('Couldnt find search results for id= ', query['_id'])
     return youtubeSongList
 
 
-# def getVideoStatistics():
-#     videoData =[]
-#     youTubeVideoList=[]
-#     videoIdList=getVideoIds()
-#     for ids in videoIdList:
-#         request = youtubeClient.videos().list(part="snippet,contentDetails,statistics", id=ids)
-#         response = request.execute()
-#         youTubeVideoList.append(response)
-#     for items in youTubeVideoList:
-#         for data in items['items']:
-#             details = {
-#                 'id':data['id'],
-#                 'statistics':data['statistics']}
-#             videoData.append(details)
-#     return videoData
+def getVideoStatistics():
+    finalDicts = []
+    todayDate = date.today().strftime('%d/%m/%Y')
+    songsBatched = models.getCursorOfSize('Videos', {'youtubeId': {'$exists': True}}, 50)
+
+    for batch in songsBatched:
+        spotifyIds = []
+        commaSeperatedQuery = ''
+        for song in batch:
+            spotifyIds.append(song['_id'])
+            commaSeperatedQuery += (song['youtubeId']+',')
+
+        commaSeperatedQuery = commaSeperatedQuery[:-1]
+        request = youtubeClient.videos().list(part='statistics', id=commaSeperatedQuery)
+        try:
+            response = request.execute()
+        except:
+            print('<<ERROR>> API LIMIT REACHED')
+            return finalDicts
+
+        for index, res in enumerate(response['items']):
+            finalDicts.append({'_id': spotifyIds[index], 'views.' + todayDate: res['statistics']})
+
+    return finalDicts
     

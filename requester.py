@@ -74,7 +74,7 @@ def getYouTubeIds():
 def getVideoStatistics():
     finalDicts = []
     todayDate = date.today().strftime('%d/%m/%Y')
-    songsBatched = models.getCursorOfSize('Videos', {'youtubeId': {'$exists': True}}, 50)
+    songsBatched = models.getCursorOfSize('Videos', {'youtubeId': {'$exists': True}, 'views.' + todayDate: {'$exists': False}}, 50)
 
     for batch in songsBatched:
         spotifyIds = []

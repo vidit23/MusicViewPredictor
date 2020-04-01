@@ -26,6 +26,15 @@ def getYoutubeStats():
         updateOneDocument('Videos', dicts['_id'], dicts)
     return str(idsAndStats)
 
+@app.route('/load_spotify_kaggle_data')
+def load_spotify_kaggle_data():
+    spotify_kaggle_data = load_kaggle_data()
+    i = 0
+    for i in range(len(spotify_kaggle_data)):
+        result = insertManyFromDataframe('Videos', spotify_kaggle_data[i:i+100])
+        i = i+100
+    return str(result)
+
 
 if __name__ == "__main__":
     app.run()

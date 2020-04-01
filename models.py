@@ -3,7 +3,8 @@ import pandas as pd
 from config import *
 
 print("Connecting to the DB")
-client = pymongo.MongoClient("mongodb+srv://" + MONGO_ATLAS_USER + ":" + MONGO_ATLAS_PASSWORD + "@mvp-bvqf2.mongodb.net/test?retryWrites=true&w=majority")
+# client = pymongo.MongoClient("mongodb+srv://" + MONGO_ATLAS_USER + ":" + MONGO_ATLAS_PASSWORD + "@mvp-bvqf2.mongodb.net/test?retryWrites=true&w=majority")
+client = pymongo.MongoClient("mongodb://localhost:27017/MVP")
 connectedDB = client['MVP']
 
 
@@ -42,3 +43,7 @@ def updateManyFromDataframe(collectionName, data):
 
 def updateOneDocument(collectionName, documentId, updateQuery):
     return connectedDB[collectionName].update({'_id': documentId}, {'$set': updateQuery})
+
+# def upsertManyDocument(data):
+#     data_dict = data.to_dict("records")
+#     return UpdateOne(data_dict,upsert=True)

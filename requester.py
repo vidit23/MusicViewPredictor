@@ -74,8 +74,7 @@ def getYouTubeIds():
                 return youtubeSongList
             try:
                 youtubeClient = googleapiclient.discovery.build('youtube', 'v3', developerKey = YOUTUBE_API_KEY[KEY_NUMBER])
-                request = youtubeClient.search().list(part="id", maxResults=1, type='video', q=query['name'])
-                response = request.execute()
+                continue
             except:
                 print('<<ERROR>> Double error', KEY_NUMBER)
                 return youtubeSongList
@@ -84,6 +83,7 @@ def getYouTubeIds():
             youtubeSongList.append({'_id': query['_id'], 'youtubeId': response['items'][0]['id']['videoId']})
         else:
             print('Couldnt find search results for id= ', query['_id'])
+            youtubeSongList.append({'_id': query['_id'], 'youtubeId': ''})
     return youtubeSongList
 
 
@@ -93,7 +93,7 @@ def getVideoStatistics():
     global KEY_NUMBER
 
     todayDate = date.today().strftime('%d/%m/%Y')
-    songsBatched = models.getCursorOfSize('Videos', {'youtubeId': {'$exists': True}, 'views.' + todayDate: {'$exists': False}}, ['youtubeId'], 50)
+    songsBatched = models.getCursorOfSize('Videos', {'youtubeId': {'$exists': True, '$ne': ''}, 'views.' + todayDate: {'$exists': False}}, ['youtubeId'], 50)
 
     for batch in songsBatched:
         spotifyIds = []
@@ -114,8 +114,7 @@ def getVideoStatistics():
                 return finalDicts
             try:
                 youtubeClient = googleapiclient.discovery.build('youtube', 'v3', developerKey = YOUTUBE_API_KEY[KEY_NUMBER])
-                request = youtubeClient.videos().list(part='statistics', id=commaSeperatedQuery)
-                response = request.execute()
+                continue
             except:
                 print('<<ERROR>> Double error', KEY_NUMBER)
                 return finalDicts

@@ -35,6 +35,14 @@ def getYoutubeStats():
         updateOneDocument('Videos', dicts['_id'], dicts)
     return str(idsAndStats)
 
+@app.route("/spotifyArtists")
+def getSpotifyArtistsAPI():
+    artists = getSpotifyArtists()
+    for df in artists:
+        result = insertManyFromDataframe('Artists', df)
+    return str(result)
+
+
 
 if __name__ == "__main__":
     app.run()

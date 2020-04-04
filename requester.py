@@ -126,8 +126,36 @@ def getVideoStatistics():
     return finalDicts
 
 
-def load_kaggle_data():
-    data = pd.read_csv("./data/SpotifyFeatures.csv")
-    cleaned_df = data.dropna()
-    cleaned_df.rename(columns={'track_id':'_id'}, inplace=True)
-    return cleaned_df
+def getSpotifyArtistDetails(artists_ids):
+    artist_details = []
+    artistsInfo = spotifyClient.artists(artists_ids)['artists']
+    for artistInfo in artistsInfo:
+        important_info = {'_id': artistInfo['id'], 
+                      'name': artistInfo['name'],
+                      'popularity': artistInfo['popularity'],
+                      'genres': artistInfo['genres'],
+                      'followers':artistInfo['followers']['total']
+                        }
+        artist_details.append(important_info)
+    return artist_details
+
+
+def getSpotifyArtists():
+    results=[]
+    listOfListOfIds = models.getCursorOfSize('Videos', {}, ['artists'], 49)
+    print('Read from the DB')
+    artists_ids = []
+    for index, idList in enumerate(listOfListOfIds):
+        for track in idList: #each track is just one row in the database
+            for artist_id in track['artists']:
+                artists_ids.append(artist_id['id'])
+    artists_ids_set = set(artists_ids) 
+    unique_artist_list = (list(artists_ids_set))
+    index = 0
+    while index < len(unique_artist_list):
+        spotifyArtistDf = getSpotifyArtistDetails(unique_artist_list[index:index+50])
+        spotifyArtistDf = pd.DataFrame(spotifyArtistDf)
+        results.append(spotifyArtistDf)
+        index += 50
+        # result = insertManyFromDataframe('Artists', spotifyArtistDf)
+    return results

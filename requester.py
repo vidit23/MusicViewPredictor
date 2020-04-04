@@ -14,12 +14,13 @@ os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 spotifyCredentialsManager = SpotifyClientCredentials(client_id = SPOTIFY_CLIENT_ID, client_secret = SPOTIFY_CLIENT_SECRET)
 spotifyClient = spotipy.Spotify(client_credentials_manager=spotifyCredentialsManager)
-youtubeClient = googleapiclient.discovery.build('youtube', 'v3', developerKey = YOUTUBE_API_KEY)
+youtubeClient = googleapiclient.discovery.build('youtube', 'v3', developerKey = YOUTUBE_API_KEY[YOUTUBE_KEY_NUMBER])
 
 
 def getSpotifyTrackDetails(trackIds):
     trackFeatures = spotifyClient.audio_features(trackIds)
     featuresDf = pd.DataFrame(trackFeatures)
+    # print(featuresDf)
     featuresDf.drop(['track_href', 'analysis_url', 'uri'], axis=1, inplace=True)
 
     trackInformation = spotifyClient.tracks(trackIds)
@@ -40,7 +41,7 @@ def getSpotifyTrackDetails(trackIds):
 
 
 def getYoutubeSearchQueries():
-    spotifyTracksDf = models.getCursorOfSize('Videos', {'youtubeId': {'$exists': False}}, 50)
+    spotifyTracksDf = models.getCursorOfSize('Videos', {'youtubeId': {'$exists': False}}, ['name', 'artists'], 50)
     spotifySongs = []
     for row in spotifyTracksDf:
         for song in row:
@@ -74,7 +75,7 @@ def getYouTubeIds():
 def getVideoStatistics():
     finalDicts = []
     todayDate = date.today().strftime('%d/%m/%Y')
-    songsBatched = models.getCursorOfSize('Videos', {'youtubeId': {'$exists': True}, 'views.' + todayDate: {'$exists': False}}, 50)
+    songsBatched = models.getCursorOfSize('Videos', {'youtubeId': {'$exists': True}, 'views.' + todayDate: {'$exists': False}}, ['youtubeId'], 50)
 
     for batch in songsBatched:
         spotifyIds = []
@@ -95,4 +96,10 @@ def getVideoStatistics():
             finalDicts.append({'_id': spotifyIds[index], 'views.' + todayDate: res['statistics']})
 
     return finalDicts
-    
+
+
+def load_kaggle_data():
+    data = pd.read_csv("./data/SpotifyFeatures.csv")
+    cleaned_df = data.dropna()
+    cleaned_df.rename(columns={'track_id':'_id'}, inplace=True)
+    return cleaned_df

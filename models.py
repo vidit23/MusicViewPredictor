@@ -1,4 +1,5 @@
 import pymongo
+from pymongo import InsertOne, DeleteOne, ReplaceOne, UpdateOne
 import pandas as pd
 from config import *
 
@@ -18,28 +19,46 @@ def insertManyFromDataframe(collectionName, data):
         print('Because of ', err)
         return []
 
-def getCursorOfSize(collectionName, query, batchSize):
-    count = 1
-    finalResult = []
-    tracks = []
-    for doc in connectedDB[collectionName].find(query, batch_size=batchSize):
-        if count % batchSize == 0:
-            finalResult.append(tracks)
-            tracks = []
-        count+=1
-        tracks.append(doc)
-    finalResult.append(tracks)
-    return finalResult
 
 def updateManyFromDataframe(collectionName, data):
     data_dict = data.to_dict("records")
+    bulkOps = []
     for data in data_dict:
-        try:
-            connectedDB[collectionName].replace_one({'_id': data['_id']}, data)
-        except Exception as err:
-            print('Could not insert into the collection ', collectionName)
-            print('Because of ', err)
-            return []
+        bulkOps.append(UpdateOne({'_id': data['_id']}, {'$set': data}))
+    try:
+        inserted = connectedDB[collectionName].bulk_write(bulkOps)
+        return inserted.bulk_api_result
+    except Exception as err:
+        print('Could not insert into the collection ', collectionName)
+        print('Because of ', err)
+        return []
+
+
+def getCursorOfSize(collectionName, query, projection, batchSize):
+    count = 0
+    finalResult = []
+    tracks = []
+    for doc in connectedDB[collectionName].find(query, projection=projection, batch_size=batchSize):
+        count+=1
+        tracks.append(doc)
+        if count % batchSize == 0:
+            finalResult.append(tracks)
+            tracks = []
+        
+    finalResult.append(tracks)
+    return finalResult
+
+
+# def updateManyFromDataframe(collectionName, data):
+#     data_dict = data.to_dict("records")
+#     for data in data_dict:
+#         try:
+#             connectedDB[collectionName].update({'_id': data['_id']}, {'$set': data})
+#         except Exception as err:
+#             print('Could not insert into the collection ', collectionName)
+#             print('Because of ', err)
+#             return []
+
 
 def updateOneDocument(collectionName, documentId, updateQuery):
     return connectedDB[collectionName].update({'_id': documentId}, {'$set': updateQuery})

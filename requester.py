@@ -14,7 +14,8 @@ os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 spotifyCredentialsManager = SpotifyClientCredentials(client_id = SPOTIFY_CLIENT_ID, client_secret = SPOTIFY_CLIENT_SECRET)
 spotifyClient = spotipy.Spotify(client_credentials_manager=spotifyCredentialsManager)
-youtubeClient = googleapiclient.discovery.build('youtube', 'v3', developerKey = YOUTUBE_API_KEY[YOUTUBE_KEY_NUMBER])
+KEY_NUMBER = 0
+youtubeClient = googleapiclient.discovery.build('youtube', 'v3', developerKey = YOUTUBE_API_KEY[KEY_NUMBER])
 
 
 def getSpotifyTrackDetails(trackIds):
@@ -55,8 +56,11 @@ def getYoutubeSearchQueries():
 
 #returns videoIds, channelId, title description and other information related to the video
 def getYouTubeIds():
+    global youtubeClient
+    global KEY_NUMBER
     song_list = getYoutubeSearchQueries()
-    song_list = song_list[:50]
+    print('Got the search queries')
+    song_list = song_list[:500]
     youtubeSongList=[]
     for query in song_list:
         request = youtubeClient.search().list(part="id", maxResults=1, type='video', q=query['name'])
@@ -64,7 +68,18 @@ def getYouTubeIds():
             response = request.execute()
         except:
             print('<<ERROR>> API LIMIT REACHED')
-            return youtubeSongList
+            KEY_NUMBER += 1
+            if KEY_NUMBER == len(YOUTUBE_API_KEY):
+                print('<<ERROR>> The last key is also over')
+                return youtubeSongList
+            try:
+                youtubeClient = googleapiclient.discovery.build('youtube', 'v3', developerKey = YOUTUBE_API_KEY[KEY_NUMBER])
+                request = youtubeClient.search().list(part="id", maxResults=1, type='video', q=query['name'])
+                response = request.execute()
+            except:
+                print('<<ERROR>> Double error', KEY_NUMBER)
+                return youtubeSongList
+
         if len(response['items']) != 0:
             youtubeSongList.append({'_id': query['_id'], 'youtubeId': response['items'][0]['id']['videoId']})
         else:
@@ -74,6 +89,9 @@ def getYouTubeIds():
 
 def getVideoStatistics():
     finalDicts = []
+    global youtubeClient
+    global KEY_NUMBER
+
     todayDate = date.today().strftime('%d/%m/%Y')
     songsBatched = models.getCursorOfSize('Videos', {'youtubeId': {'$exists': True}, 'views.' + todayDate: {'$exists': False}}, ['youtubeId'], 50)
 
@@ -90,7 +108,17 @@ def getVideoStatistics():
             response = request.execute()
         except:
             print('<<ERROR>> API LIMIT REACHED')
-            return finalDicts
+            KEY_NUMBER += 1
+            if KEY_NUMBER == len(YOUTUBE_API_KEY):
+                print('<<ERROR>> The last key is also over')
+                return finalDicts
+            try:
+                youtubeClient = googleapiclient.discovery.build('youtube', 'v3', developerKey = YOUTUBE_API_KEY[KEY_NUMBER])
+                request = youtubeClient.videos().list(part='statistics', id=commaSeperatedQuery)
+                response = request.execute()
+            except:
+                print('<<ERROR>> Double error', KEY_NUMBER)
+                return finalDicts
 
         for index, res in enumerate(response['items']):
             finalDicts.append({'_id': spotifyIds[index], 'views.' + todayDate: res['statistics']})

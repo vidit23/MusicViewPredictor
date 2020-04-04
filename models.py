@@ -1,5 +1,5 @@
 import pymongo
-from pymongo import InsertOne, DeleteOne, ReplaceOne
+from pymongo import InsertOne, DeleteOne, ReplaceOne, UpdateOne
 import pandas as pd
 from config import *
 
@@ -19,11 +19,11 @@ def insertManyFromDataframe(collectionName, data):
         return []
 
 
-def replaceManyFromDataframe(collectionName, data):
+def updateManyFromDataframe(collectionName, data):
     data_dict = data.to_dict("records")
     bulkOps = []
     for data in data_dict:
-        bulkOps.append(ReplaceOne({'_id': data['_id']}, data))
+        bulkOps.append(UpdateOne({'_id': data['_id']}, {'$set': data}))
     try:
         inserted = connectedDB[collectionName].bulk_write(bulkOps)
         return inserted.bulk_api_result
@@ -48,15 +48,15 @@ def getCursorOfSize(collectionName, query, projection, batchSize):
     return finalResult
 
 
-def updateManyFromDataframe(collectionName, data):
-    data_dict = data.to_dict("records")
-    for data in data_dict:
-        try:
-            connectedDB[collectionName].update({'_id': data['_id']}, {'$set': data})
-        except Exception as err:
-            print('Could not insert into the collection ', collectionName)
-            print('Because of ', err)
-            return []
+# def updateManyFromDataframe(collectionName, data):
+#     data_dict = data.to_dict("records")
+#     for data in data_dict:
+#         try:
+#             connectedDB[collectionName].update({'_id': data['_id']}, {'$set': data})
+#         except Exception as err:
+#             print('Could not insert into the collection ', collectionName)
+#             print('Because of ', err)
+#             return []
 
 
 def updateOneDocument(collectionName, documentId, updateQuery):

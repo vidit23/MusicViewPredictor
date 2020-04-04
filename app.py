@@ -14,7 +14,7 @@ def main():
     for index, idList in enumerate(listOfListOfIds):
         # print(idList)
         spotifyTracksDf = getSpotifyTrackDetails([id_dict['_id'] for id_dict in idList])
-        result = replaceManyFromDataframe('Videos', spotifyTracksDf)
+        result = updateManyFromDataframe('Videos', spotifyTracksDf)
         print(index)
         time.sleep(1)
         # break
@@ -23,6 +23,7 @@ def main():
 @app.route('/youtubeIds')
 def getCorrespondingYoutubeIds():
     correspondingIds = getYouTubeIds()
+    print('Got the youtube ids')
     for dicts in correspondingIds:
         updateOneDocument('Videos', dicts['_id'], dicts)
     return str(correspondingIds)

@@ -1,0 +1,11 @@
+dnspython
+pymongo
+flask
+spotipy
+requests
+pandas
+numpy
+scikit-learn
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2
